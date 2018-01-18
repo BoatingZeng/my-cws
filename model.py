@@ -63,9 +63,11 @@ class Model(object):
                          'ngram': self.ngram, 'is_space': self.is_space, 'sent_seg': self.sent_seg, 'emb_path': self.emb_path,
                          'tag_scheme': self.tag_scheme}
             #print param_dic
-            f_model = open(trained_model, 'wb')
-            pickle.dump(param_dic, f_model)
-            f_model.close()
+            # 如果已经有model的基本信息，就不要再导出了
+            if not os.path.isfile(trained_model):
+                f_model = open(trained_model, 'wb')
+                pickle.dump(param_dic, f_model)
+                f_model.close()
 
         # define shared weights and variables
 

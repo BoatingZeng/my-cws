@@ -352,10 +352,9 @@ def get_new_chars(lines, char2idx):
 
 if __name__ == '__main__':
     print('测试')
-    # tagger = Tagger('./data/prechars_large')
+    tagger = Tagger('./data/prechars_large')
 
     lines = codecs.open('./data/pku_raw.txt', 'rb', encoding='utf-8')
     t = time()
-    lines = [line.strip() for line in lines]
+    tagger.tag(lines)
     print(time()-t)
-    print(lines)
