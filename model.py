@@ -250,10 +250,13 @@ class Model(object):
                 assign_op = old_emb_weights.assign(new_emb_weights)
                 self.updates.append(assign_op)
 
-    def run_updates(self, sess, weight_path):
-        self.saver.restore(sess, weight_path)
+    def run_updates(self, sess, weight_path, need_restore=True):
+        if need_restore:
+            self.saver.restore(sess, weight_path)
         for op in self.updates:
             sess.run(op)
+        # 每次update后清空
+        self.updates = []
 
         print('Loaded.')
 
