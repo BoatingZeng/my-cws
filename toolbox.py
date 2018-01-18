@@ -340,7 +340,8 @@ def get_input_vec_raw(path, fname, char2idx, lines=None, limit=500):
             x = []
     max_len = min(max_len, limit)
     if l_count > 0:
-        print('%d (out of %d) sentences are chopped.' % (l_count, s_count))
+        pass
+        # print('%d (out of %d) sentences are chopped.' % (l_count, s_count))
     return [x_indices], max_len
 
 

@@ -506,9 +506,8 @@ class Model(object):
 
         prediction_out = toolbox.mlp_post(r_x_raw, prediction_out)
 
-        if not seg_large:
+        if not seg_large and outpath is not None:
             toolbox.printer(r_x_raw, prediction_out, multi_out, outpath)
-
         else:
             return prediction_out, multi_out
 

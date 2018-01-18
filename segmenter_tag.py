@@ -98,13 +98,13 @@ class Tagger(object):
             main_sess.run(init)
             self.model.run_updates(main_sess, weight_path + '_weights')
 
-    def tag(self, lines, output_path):
+    def tag(self, lines):
         """
 
         :param lines: 字符串数组，相当于文件里的一行一行
         :return:
         """
-
+        lines = [line.strip() for line in lines]
         # 这些是每次tag时的用的
         new_chars = get_new_chars(lines, self.char2idx)
         if self.emb_path is not None:
@@ -117,20 +117,15 @@ class Tagger(object):
         # 因为build graph的时候要用到max_step，但是每次tag的时候build graph并不是所期望的
         # 所以max_step设置为初始化时的sent_limit
         raw_x, raw_len = toolbox.get_input_vec_raw(None, None, char2idx, lines, limit=self.sent_limit)
-        print('Raw setences: %d instances.' % len(raw_x[0]))
+        # print('Raw setences: %d instances.' % len(raw_x[0]))
         max_step = self.sent_limit
 
         for k in range(len(raw_x)):
             raw_x[k] = toolbox.pad_zeros(raw_x[k], max_step)
 
         with tf.device(self.gpu_config):
-            self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None,
-                      outpath=output_path, batch_size=self.tag_batch)
-
-
-
-
-
+            prediction_out, multi_out = self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None, batch_size=self.tag_batch)
+        return prediction_out
 
 
 def tag(path=None, model='trained_model', raw=None, output_path=None, segment_large=False, sent_limit=300, gpu=0,
@@ -354,6 +349,13 @@ def get_new_chars(lines, char2idx):
                 new_chars.add(ch)
     return new_chars
 
+
 if __name__ == '__main__':
     print('测试')
-    tag(path='./data/prechars_large', raw='./data/pku_raw.txt', output_path='./data/pku_seg.txt')
+    # tagger = Tagger('./data/prechars_large')
+
+    lines = codecs.open('./data/pku_raw.txt', 'rb', encoding='utf-8')
+    t = time()
+    lines = [line.strip() for line in lines]
+    print(time()-t)
+    print(lines)
