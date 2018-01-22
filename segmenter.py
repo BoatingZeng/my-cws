@@ -5,6 +5,7 @@
 """
 import argparse
 import os
+import sys
 import reader
 import toolbox
 import codecs
@@ -131,6 +132,7 @@ if args.action == 'train':
         emb_dim = args.embeddings_dimension
         emb = None
 
+    # 如果语料里出现不在字典里的字，就把它指向<UNK>
     train_x, train_y, max_len_train = toolbox.get_input_vec(path, 'tag_train.txt', char2idx, tag2idx,
                                                             limit=args.sent_limit, train_size=args.train_size)
 
@@ -174,6 +176,10 @@ if args.action == 'train':
 
         init = tf.global_variables_initializer()
 
+        # 保存graph
+        # writer = tf.summary.FileWriter('./data/graphs/train/main_graph', main_graph)
+        # writer.close()
+
         print('Done. Time consumed: %d seconds' % int(time() - t))
 
     main_graph.finalize()
@@ -186,6 +192,12 @@ if args.action == 'train':
         decode_graph.finalize()
 
         decode_sess = tf.Session(config=config, graph=decode_graph)
+
+        # 保存graph
+        # writer = tf.summary.FileWriter('./data/graphs/train/decode_graph', decode_graph)
+        # writer.close()
+        # print('保存之后退出，不继续')
+        # sys.exit()
 
         sess = [main_sess, decode_sess]
 
