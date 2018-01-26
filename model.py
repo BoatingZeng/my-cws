@@ -127,7 +127,7 @@ class Model(object):
 
             emb_out = DropoutLayer(dr)(emb_out)
 
-            rnn_out = BiLSTM(rnn_dim, fw_cell=fw_rnn_cell, bw_cell=bw_rnn_cell, p=dr, name='BiLSTM' + str(bucket), scope='BiRNN')(emb_out, input_v)
+            rnn_out = BiLSTM(rnn_dim, nums_layers=rnn_num, fw_cell=fw_rnn_cell, bw_cell=bw_rnn_cell, p=dr, name='BiLSTM' + str(bucket), scope='BiRNN')(emb_out, input_v)
 
             output = output_wrapper(rnn_out)
 

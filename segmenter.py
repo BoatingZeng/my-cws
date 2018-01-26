@@ -42,7 +42,7 @@ parser.add_argument('-gru', '--gru', default=False, help='Use GRU as the recurre
 parser.add_argument('-rnn', '--rnn_cell_dimension', default=200, type=int, help='Dimension of the RNN cells')
 parser.add_argument('-layer', '--rnn_layer_number', default=1, type=int, help='Numbers of the RNN layers')
 
-parser.add_argument('-dr', '--dropout_rate', default=0.5, type=float, help='Dropout rate')
+parser.add_argument('-dr', '--dropout_rate', default=0.5, type=float, help='Dropout rate.这个参数是丢弃的概率，不是保留的概率。')
 
 parser.add_argument('-iter', '--epochs', default=30, type=int, help='Numbers of epochs')
 
