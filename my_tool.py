@@ -2,8 +2,8 @@ import codecs
 
 
 # 提取字典，并且统计字频，在当前目录生成chars.txt，filelist是文件path数组
-# TODO 字典里不保留英文字母，特殊字符，这个要定个列表来做过滤
-def get_chars(filelist, out_path='./chars.txt', exclude_file=None):
+# 排除exclude_file里收录的字符，并且排除频数低于unk_rule的字符
+def get_chars(filelist, out_path='./chars.txt', exclude_file=None, unk_rule=2):
     # 读取excludeFile，加入到excludeSet
     # excludeFile一行一个字符
     exclude_set = None
@@ -27,5 +27,7 @@ def get_chars(filelist, out_path='./chars.txt', exclude_file=None):
                 else:
                     char_set[ch] = 1
     for k, v in list(char_set.items()):
+        if v < unk_rule:
+            continue
         out_char.write(k + '\t' + str(v) + '\n')
     out_char.close()
