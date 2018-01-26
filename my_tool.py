@@ -1,4 +1,5 @@
 import codecs
+import random
 
 
 # 提取字典，并且统计字频，在当前目录生成chars.txt，filelist是文件path数组
@@ -31,3 +32,31 @@ def get_chars(filelist, out_path='./chars.txt', exclude_file=None, unk_rule=1):
             continue
         out_char.write(k + '\t' + str(v) + '\n')
     out_char.close()
+
+
+def divide_corpus(all_path, train_path, dev_path, test_path, train_rate=0.6, dev_rate=0.2, test_rate=0.2):
+    all = codecs.open(all_path, 'r', encoding='utf-8')
+    train = codecs.open(train_path, 'w', encoding='utf-8')
+    dev = codecs.open(dev_path, 'w', encoding='utf-8')
+    test = codecs.open(test_path, 'w', encoding='utf-8')
+    # 区间顺序是train，dev，test
+    random.seed()
+    for line in all:
+        ra = random.random()
+        if ra <= train_rate:
+            train.write(line)
+        elif ra <= train_rate + dev_rate:
+            dev.write(line)
+        else:
+            test.write(line)
+
+    all.close()
+    train.close()
+    dev.close()
+    test.close()
+
+
+if __name__ == '__main__':
+    print('测试')
+    divide_corpus('./data/people2014.txt', './data/people2014/people2014_train.segd',
+                  './data/people2014/people2014_dev.segd', './data/people2014/people2014_test.segd')
