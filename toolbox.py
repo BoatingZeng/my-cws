@@ -131,7 +131,7 @@ def get_chars(path, filelist):
     out_char.close()
 
 
-def get_dicts(path, tag_scheme='BIES', crf=1):
+def get_dicts(path, tag_scheme='BIES', crf=1, unk_rule=2):
     char2idx = {'<P>': 0, '<UNK>': 1, '<#>': 2}
     '''
         <P>：每个bucket里填充的空白
@@ -148,7 +148,7 @@ def get_dicts(path, tag_scheme='BIES', crf=1):
                 idx += 1
         else:
             char2idx[segs[0]] = idx
-            if int(segs[1]) == 1:
+            if int(segs[1]) < unk_rule:
                 unk_chars.append(idx)
             idx += 1
     idx2char = {k: v for v, k in list(char2idx.items())}

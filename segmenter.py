@@ -74,6 +74,8 @@ parser.add_argument('-rs', '--reset', default=False, help='Delete and re-initial
 
 parser.add_argument('-sb', '--segmentation_bias', default=-1, type=float, help='Add segmentation bias to under(over)-splitting')
 
+parser.add_argument('-ur', '--unk_rule', default=2, type=int, help='字典里，低于这个频数的字当作生僻字')
+
 args = parser.parse_args()
 
 if args.action == 'train':
@@ -114,7 +116,7 @@ if args.action == 'train':
     '''
         unk_chars储存生僻字，这里把只出现一次的字作为生僻字了
     '''
-    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, args.tags, args.crf)
+    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, args.tags, args.crf, args.unk_rule)
 
     #trans_dict没有用到，但是暂时不方便删除
     trans_dict = {}
@@ -168,7 +170,7 @@ if args.action == 'train':
 
             model.main_graph(trained_model=path + '/' + model_file + '_model', scope=scope,
                              emb_dim=emb_dim, gru=args.gru, rnn_dim=args.rnn_cell_dimension,
-                             rnn_num=args.rnn_layer_number, drop_out=args.dropout_rate, emb=emb)
+                             rnn_num=args.rnn_layer_number, drop_out=args.dropout_rate, emb=emb, unk_rule=args.unk_rule)
             t = time()
 
         model.config(optimizer=args.optimizer, decay=args.decay_rate, lr_v=args.learning_rate,
@@ -250,13 +252,14 @@ else:
     sent_seg = param_dic['sent_seg']
     emb_path = param_dic['emb_path']
     tag_scheme = param_dic['tag_scheme']
+    unk_rule = param_dic['unk_rule']
 
     if args.embeddings is not None:
         emb_path = args.embeddings
 
     ngram = 1
 
-    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, tag_scheme, crf)
+    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, tag_scheme, crf, unk_rule)
 
     # trans_dict没有用到，但是暂时不方便删除
     trans_dict = {}

@@ -48,8 +48,9 @@ class Tagger(object):
         self.sent_seg = param_dic['sent_seg']
         self.emb_path = param_dic['emb_path']
         self.tag_scheme = param_dic['tag_scheme']
+        self.unk_rule = param_dic['unk_rule']
 
-        self.char2idx, self.unk_chars, self.idx2char, self.tag2idx, self.idx2tag = toolbox.get_dicts(path, self.tag_scheme, self.crf)
+        self.char2idx, self.unk_chars, self.idx2char, self.tag2idx, self.idx2tag = toolbox.get_dicts(path, self.tag_scheme, self.crf, self.unk_rule)
         self.trans_dict = {}
 
         config = tf.ConfigProto(allow_soft_placement=True)

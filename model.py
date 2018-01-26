@@ -56,12 +56,12 @@ class Model(object):
 
         self.real_batches = toolbox.get_real_batch(self.counts, self.batch_size)
 
-    def main_graph(self, trained_model, scope, emb_dim, gru, rnn_dim, rnn_num, drop_out=0.5, emb=None):
+    def main_graph(self, trained_model, scope, emb_dim, gru, rnn_dim, rnn_num, drop_out=0.5, emb=None, unk_rule=2):
         if trained_model is not None:
             param_dic = {'nums_chars': self.nums_chars, 'nums_tags': self.nums_tags, 'crf': self.crf, 'emb_dim': emb_dim,
                          'gru': gru, 'rnn_dim': rnn_dim, 'rnn_num': rnn_num, 'drop_out': drop_out, 'buckets_char': self.buckets_char,
                          'ngram': self.ngram, 'is_space': self.is_space, 'sent_seg': self.sent_seg, 'emb_path': self.emb_path,
-                         'tag_scheme': self.tag_scheme}
+                         'tag_scheme': self.tag_scheme, 'unk_rule': unk_rule}
             #print param_dic
             # 如果已经有model的基本信息，就不要再导出了
             if not os.path.isfile(trained_model):
