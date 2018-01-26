@@ -3,7 +3,7 @@ import codecs
 
 # 提取字典，并且统计字频，在当前目录生成chars.txt，filelist是文件path数组
 # 排除exclude_file里收录的字符，并且排除频数低于unk_rule的字符
-def get_chars(filelist, out_path='./chars.txt', exclude_file=None, unk_rule=2):
+def get_chars(filelist, out_path='./chars.txt', exclude_file=None, unk_rule=1):
     # 读取excludeFile，加入到excludeSet
     # excludeFile一行一个字符
     exclude_set = None
