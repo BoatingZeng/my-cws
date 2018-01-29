@@ -63,22 +63,23 @@ class Tagger(object):
         print('Initialization....')
         main_graph = tf.Graph()
         with main_graph.as_default():
-            with tf.variable_scope("tagger") as scope:
-                self.model = Model(nums_chars=self.nums_chars, nums_tags=self.nums_tags, buckets_char=[self.sent_limit], counts=[200],
-                              crf=self.crf, ngram=self.nums_ngrams, batch_size=self.tag_batch)
+            with tf.device(self.gpu_config):
+                with tf.variable_scope("tagger") as scope:
+                    self.model = Model(nums_chars=self.nums_chars, nums_tags=self.nums_tags, buckets_char=[self.sent_limit], counts=[200],
+                                  crf=self.crf, ngram=self.nums_ngrams, batch_size=self.tag_batch)
 
-                self.model.main_graph(trained_model=None, scope=scope, emb_dim=self.emb_dim, gru=self.gru,
-                                 rnn_dim=self.rnn_dim, rnn_num=self.rnn_num, drop_out=self.drop_out)
-            # TODO 先不要改变embedding的大小
-            # model.define_updates(new_chars=new_chars, emb_path=emb_path, char2idx=char2idx)
+                    self.model.main_graph(trained_model=None, scope=scope, emb_dim=self.emb_dim, gru=self.gru,
+                                     rnn_dim=self.rnn_dim, rnn_num=self.rnn_num, drop_out=self.drop_out)
+                # TODO 先不要改变embedding的大小
+                # model.define_updates(new_chars=new_chars, emb_path=emb_path, char2idx=char2idx)
 
-            init = tf.global_variables_initializer()
+                init = tf.global_variables_initializer()
 
-            # 保存graph
-            # writer = tf.summary.FileWriter('./data/graphs/tag/main_graph', main_graph)
-            # writer.close()
+                # 保存graph
+                # writer = tf.summary.FileWriter('./data/graphs/tag/main_graph', main_graph)
+                # writer.close()
 
-            print('Done. Time consumed: %d seconds' % int(time() - t))
+                print('Done. Time consumed: %d seconds' % int(time() - t))
         main_graph.finalize()
         idx = None
 
@@ -88,7 +89,8 @@ class Tagger(object):
             decode_graph = tf.Graph()
 
             with decode_graph.as_default():
-                self.model.decode_graph()
+                with tf.device(self.gpu_config):
+                    self.model.decode_graph()
             decode_graph.finalize()
 
             decode_sess = tf.Session(config=config, graph=decode_graph)
@@ -138,8 +140,7 @@ class Tagger(object):
         for k in range(len(raw_x)):
             raw_x[k] = toolbox.pad_zeros(raw_x[k], max_step)
 
-        with tf.device(self.gpu_config):
-            prediction_out, multi_out = self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None, batch_size=self.tag_batch)
+        prediction_out, multi_out = self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None, batch_size=self.tag_batch)
         return prediction_out
 
 

@@ -110,8 +110,8 @@ if args.action == 'train':
         toolbox.raw2tags(raws_train, sents_train, path, 'tag_train.txt', reset=args.reset, tag_scheme=args.tags)
         toolbox.raw2tags(raws_dev, sents_dev, path, 'tag_dev.txt', gold_path='tag_dev_gold.txt', tag_scheme=args.tags)
 
-    if args.reset or not os.path.isfile(path + '/chars.txt'):
-        toolbox.get_chars(path, ['raw_train.txt', 'raw_dev.txt'])
+    # if args.reset or not os.path.isfile(path + '/chars.txt'):
+    #     toolbox.get_chars(path, ['raw_train.txt', 'raw_dev.txt'])
 
     '''
         unk_chars储存生僻字，这里把只出现一次的字作为生僻字了
@@ -163,26 +163,27 @@ if args.action == 'train':
     print('Initialization....')
     main_graph = tf.Graph()
     with main_graph.as_default():
-        with tf.variable_scope("tagger") as scope:
-            model = Model(nums_chars=len(char2idx) + 2, nums_tags=nums_tag, buckets_char=b_lens, counts=b_count,
-                          crf=args.crf, ngram=nums_grams, batch_size=args.train_batch,
-                          emb_path=args.embeddings, tag_scheme=args.tags)
+        with tf.device(gpu_config):
+            with tf.variable_scope("tagger") as scope:
+                model = Model(nums_chars=len(char2idx) + 2, nums_tags=nums_tag, buckets_char=b_lens, counts=b_count,
+                              crf=args.crf, ngram=nums_grams, batch_size=args.train_batch,
+                              emb_path=args.embeddings, tag_scheme=args.tags)
 
-            model.main_graph(trained_model=path + '/' + model_file + '_model', scope=scope,
-                             emb_dim=emb_dim, gru=args.gru, rnn_dim=args.rnn_cell_dimension,
-                             rnn_num=args.rnn_layer_number, drop_out=args.dropout_rate, emb=emb, unk_rule=args.unk_rule)
-            t = time()
+                model.main_graph(trained_model=path + '/' + model_file + '_model', scope=scope,
+                                 emb_dim=emb_dim, gru=args.gru, rnn_dim=args.rnn_cell_dimension,
+                                 rnn_num=args.rnn_layer_number, drop_out=args.dropout_rate, emb=emb, unk_rule=args.unk_rule)
+                t = time()
 
-        model.config(optimizer=args.optimizer, decay=args.decay_rate, lr_v=args.learning_rate,
-                     momentum=args.momentum, clipping=args.clipping)
+            model.config(optimizer=args.optimizer, decay=args.decay_rate, lr_v=args.learning_rate,
+                         momentum=args.momentum, clipping=args.clipping)
 
-        init = tf.global_variables_initializer()
+            init = tf.global_variables_initializer()
 
-        # 保存graph
-        # writer = tf.summary.FileWriter('./data/graphs/train/main_graph', main_graph)
-        # writer.close()
+            # 保存graph
+            # writer = tf.summary.FileWriter('./data/graphs/train/main_graph', main_graph)
+            # writer.close()
 
-        print('Done. Time consumed: %d seconds' % int(time() - t))
+            print('Done. Time consumed: %d seconds' % int(time() - t))
 
     main_graph.finalize()
     main_sess = tf.Session(config=config, graph=main_graph)
@@ -190,7 +191,8 @@ if args.action == 'train':
     if args.crf > 0:
         decode_graph = tf.Graph()
         with decode_graph.as_default():
-            model.decode_graph()
+            with tf.device(gpu_config):
+                model.decode_graph()
         decode_graph.finalize()
 
         decode_sess = tf.Session(config=config, graph=decode_graph)
@@ -206,17 +208,17 @@ if args.action == 'train':
     else:
         sess = [main_sess, None]
 
-    with tf.device(gpu_config):
+    #with tf.device(gpu_config):
 
-        main_sess.run(init)
-        print('Initialisation...')
-        print('Done. Time consumed: %d seconds' % int(time() - t))
+    main_sess.run(init)
+    print('Initialisation...')
+    print('Done. Time consumed: %d seconds' % int(time() - t))
 
-        t = time()
-        b_dev_raw = [line.strip() for line in codecs.open(path + '/raw_dev.txt', 'r', encoding='utf-8')]
-        model.train(b_train_x, b_train_y, b_dev_x, b_dev_raw, b_dev_y_gold, idx2tag, idx2char, unk_chars, trans_dict,
-                    sess, args.epochs, path + '/' + model_file + '_weights', lr=args.learning_rate,
-                    decay=args.decay_rate, outpath=args.output_path)
+    t = time()
+    b_dev_raw = [line.strip() for line in codecs.open(path + '/raw_dev.txt', 'r', encoding='utf-8')]
+    model.train(b_train_x, b_train_y, b_dev_x, b_dev_raw, b_dev_y_gold, idx2tag, idx2char, unk_chars, trans_dict,
+                sess, args.epochs, path + '/' + model_file + '_weights', lr=args.learning_rate,
+                decay=args.decay_rate, outpath=args.output_path)
 
 else:
 
@@ -334,18 +336,19 @@ else:
     print('Initialization....')
     main_graph = tf.Graph()
     with main_graph.as_default():
-        with tf.variable_scope("tagger") as scope:
-            model = Model(nums_chars=nums_chars, nums_tags=nums_tags, buckets_char=[max_step], counts=[200],
-                          crf=crf, ngram=nums_ngrams, batch_size=args.tag_batch)
+        with tf.device(gpu_config):
+            with tf.variable_scope("tagger") as scope:
+                model = Model(nums_chars=nums_chars, nums_tags=nums_tags, buckets_char=[max_step], counts=[200],
+                              crf=crf, ngram=nums_ngrams, batch_size=args.tag_batch)
 
-            model.main_graph(trained_model=None, scope=scope, emb_dim=emb_dim, gru=gru,
-                             rnn_dim=rnn_dim, rnn_num=rnn_num, drop_out=drop_out)
+                model.main_graph(trained_model=None, scope=scope, emb_dim=emb_dim, gru=gru,
+                                 rnn_dim=rnn_dim, rnn_num=rnn_num, drop_out=drop_out)
 
-        model.define_updates(new_chars=new_chars, emb_path=emb_path, char2idx=char2idx)
+            model.define_updates(new_chars=new_chars, emb_path=emb_path, char2idx=char2idx)
 
-        init = tf.global_variables_initializer()
+            init = tf.global_variables_initializer()
 
-        print('Done. Time consumed: %d seconds' % int(time() - t))
+            print('Done. Time consumed: %d seconds' % int(time() - t))
     main_graph.finalize()
     idx = None
 
@@ -355,7 +358,8 @@ else:
         decode_graph = tf.Graph()
 
         with decode_graph.as_default():
-            model.decode_graph()
+            with tf.device(gpu_config):
+                model.decode_graph()
         decode_graph.finalize()
 
         decode_sess = tf.Session(config=config, graph=decode_graph)
@@ -366,90 +370,58 @@ else:
         sess = [main_sess, None]
 
 
-    with tf.device(gpu_config):
-        ens_model = None
-        print('Loading weights....')
-        main_sess.run(init)
-        model.run_updates(main_sess, weight_path + '_weights')
+#with tf.device(gpu_config):
+    ens_model = None
+    print('Loading weights....')
+    main_sess.run(init)
+    model.run_updates(main_sess, weight_path + '_weights')
 
-        if args.action == 'test':
-            test_y_raw = [line.strip() for line in codecs.open(path + '/raw_test.txt', 'rb', encoding='utf-8')]
-            model.test(test_x, test_y_raw, test_y_gold, idx2tag, idx2char, unk_chars, trans_dict, sess, transducer=None,
-                       batch_size=args.test_batch, bias=args.segmentation_bias, outpath=args.output_path)
+    if args.action == 'test':
+        test_y_raw = [line.strip() for line in codecs.open(path + '/raw_test.txt', 'rb', encoding='utf-8')]
+        model.test(test_x, test_y_raw, test_y_gold, idx2tag, idx2char, unk_chars, trans_dict, sess, transducer=None,
+                   batch_size=args.test_batch, bias=args.segmentation_bias, outpath=args.output_path)
 
-        if args.action == 'tag':
-            if not args.segment_large:
-                raw_sents = []
-                for line in codecs.open(raw_file, 'rb', encoding='utf-8'):
+    if args.action == 'tag':
+        if not args.segment_large:
+            raw_sents = []
+            for line in codecs.open(raw_file, 'rb', encoding='utf-8'):
+                line = line.strip()
+                if len(line) > 0:
+                    raw_sents.append(line)
+            model.tag(raw_x, raw_sents, idx2tag, idx2char, unk_chars, trans_dict, sess, transducer=None,
+                      outpath=args.output_path, batch_size=args.tag_batch, seg_large=args.segment_large)
+
+        else:
+            count = 0
+            c_line = 0
+            l_writer = codecs.open(args.output_path, 'w', encoding='utf-8')
+            out = []
+            with codecs.open(raw_file, 'r', encoding='utf-8') as l_file:
+                lines = []
+                for line in l_file:
                     line = line.strip()
                     if len(line) > 0:
-                        raw_sents.append(line)
-                model.tag(raw_x, raw_sents, idx2tag, idx2char, unk_chars, trans_dict, sess, transducer=None,
-                          outpath=args.output_path, batch_size=args.tag_batch, seg_large=args.segment_large)
-
-            else:
-                count = 0
-                c_line = 0
-                l_writer = codecs.open(args.output_path, 'w', encoding='utf-8')
-                out = []
-                with codecs.open(raw_file, 'r', encoding='utf-8') as l_file:
-                    lines = []
-                    for line in l_file:
-                        line = line.strip()
-                        if len(line) > 0:
-                            lines.append(line)
-                        else:
-                            c_line += 1
-                        if c_line >= args.large_size:
-                            count += len(lines)
-                            c_line = 0
-                            print(count)
-                            raw_x, _ = toolbox.get_input_vec_raw(None, None, char2idx, lines=lines, limit=args.sent_limit)
-
-                            for k in range(len(raw_x)):
-                                raw_x[k] = toolbox.pad_zeros(raw_x[k], max_step)
-
-                            predition, multi = model.tag(raw_x, lines, idx2tag, idx2char, unk_chars, trans_dict, sess, transducer=None,
-                                                         outpath=args.output_path, batch_size=args.tag_batch, seg_large=args.segment_large)
-
-                            if args.only_tokenised:
-                                for l_out in predition:
-                                    if len(l_out.strip()) > 0:
-                                        l_writer.write(l_out + '\n')
-                            else:
-                                for tagged_t, multi_t in zip(predition, multi):
-                                    if len(tagged_t.strip()) > 0:
-                                        l_writer.write('#sent_tok: ' + tagged_t + '\n')
-                                        idx = 1
-                                        tgs = multi_t.split('  ')
-                                        pl = ''
-                                        for _ in range(8):
-                                            pl += '\t' + '_'
-                                        for tg in tgs:
-                                            if '!#!' in tg:
-                                                segs = tg.split('!#!')
-                                                l_writer.write(str(idx) + '-' + str(int(segs[1]) + idx - 1) + '\t' + segs[0] + pl + '\n')
-                                            else:
-                                                l_writer.write(str(idx) + '\t' + tg + pl + '\n')
-                                                idx += 1
-                                        l_writer.write('\n')
-                            lines = []
-                    if len(lines) > 0:
-
+                        lines.append(line)
+                    else:
+                        c_line += 1
+                    if c_line >= args.large_size:
+                        count += len(lines)
+                        c_line = 0
+                        print(count)
                         raw_x, _ = toolbox.get_input_vec_raw(None, None, char2idx, lines=lines, limit=args.sent_limit)
 
                         for k in range(len(raw_x)):
                             raw_x[k] = toolbox.pad_zeros(raw_x[k], max_step)
 
-                        prediction, multi = model.tag(raw_x, lines, idx2tag, idx2char, unk_chars, trans_dict, sess,
-                                                     transducer=None, outpath=args.output_path, batch_size=args.tag_batch, seg_large=args.segment_large)
+                        predition, multi = model.tag(raw_x, lines, idx2tag, idx2char, unk_chars, trans_dict, sess, transducer=None,
+                                                     outpath=args.output_path, batch_size=args.tag_batch, seg_large=args.segment_large)
 
                         if args.only_tokenised:
-                            for l_out in prediction:
+                            for l_out in predition:
                                 if len(l_out.strip()) > 0:
                                     l_writer.write(l_out + '\n')
                         else:
-                            for tagged_t, multi_t in zip(prediction, multi):
+                            for tagged_t, multi_t in zip(predition, multi):
                                 if len(tagged_t.strip()) > 0:
                                     l_writer.write('#sent_tok: ' + tagged_t + '\n')
                                     idx = 1
@@ -465,4 +437,36 @@ else:
                                             l_writer.write(str(idx) + '\t' + tg + pl + '\n')
                                             idx += 1
                                     l_writer.write('\n')
-                l_writer.close()
+                        lines = []
+                if len(lines) > 0:
+
+                    raw_x, _ = toolbox.get_input_vec_raw(None, None, char2idx, lines=lines, limit=args.sent_limit)
+
+                    for k in range(len(raw_x)):
+                        raw_x[k] = toolbox.pad_zeros(raw_x[k], max_step)
+
+                    prediction, multi = model.tag(raw_x, lines, idx2tag, idx2char, unk_chars, trans_dict, sess,
+                                                 transducer=None, outpath=args.output_path, batch_size=args.tag_batch, seg_large=args.segment_large)
+
+                    if args.only_tokenised:
+                        for l_out in prediction:
+                            if len(l_out.strip()) > 0:
+                                l_writer.write(l_out + '\n')
+                    else:
+                        for tagged_t, multi_t in zip(prediction, multi):
+                            if len(tagged_t.strip()) > 0:
+                                l_writer.write('#sent_tok: ' + tagged_t + '\n')
+                                idx = 1
+                                tgs = multi_t.split('  ')
+                                pl = ''
+                                for _ in range(8):
+                                    pl += '\t' + '_'
+                                for tg in tgs:
+                                    if '!#!' in tg:
+                                        segs = tg.split('!#!')
+                                        l_writer.write(str(idx) + '-' + str(int(segs[1]) + idx - 1) + '\t' + segs[0] + pl + '\n')
+                                    else:
+                                        l_writer.write(str(idx) + '\t' + tg + pl + '\n')
+                                        idx += 1
+                                l_writer.write('\n')
+            l_writer.close()
