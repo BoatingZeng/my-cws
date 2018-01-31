@@ -2,6 +2,7 @@
 import random
 import toolbox
 import numpy as np
+from time import time
 
 
 def train(sess, model, batch_size, config, lr, lrv, data, dr=None, drv=None, verbose=False):
@@ -16,7 +17,8 @@ def train(sess, model, batch_size, config, lr, lrv, data, dr=None, drv=None, ver
         model.append(dr)
     while start_idx < len(samples):
         if verbose:
-            print('%d' % (start_idx * 100 / n_samples) + '%')
+            t = time()
+            print('%f' % (start_idx * 100 / n_samples) + '%')
         next_batch_samples = samples[start_idx:start_idx + batch_size]
         real_batch_size = len(next_batch_samples)
         if real_batch_size < batch_size:
@@ -29,6 +31,8 @@ def train(sess, model, batch_size, config, lr, lrv, data, dr=None, drv=None, ver
             holders.append(drv)
         sess.run(config, feed_dict={m: h for m, h in zip(model, holders)})
         start_idx += batch_size
+        if verbose:
+            print('batch(size= %d )耗时：%d' % (batch_size, int(time()-t)))
 
 
 def softmax(x):

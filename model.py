@@ -293,7 +293,7 @@ class Model(object):
             score_file.close()
         else:
             best_score = [0] * 6
-
+        t_pre = time()
         lr_r = lr
 
         best_epoch = 0
@@ -323,7 +323,8 @@ class Model(object):
 
             def transducer_dict(trans_str):
                 return self.define_transducer_dict(trans_str, char2idx, sess[-1], transducer)
-
+        print('model.train内，进入训练周期前耗时：%d' % int(time() - t_pre))
+        print('开始进入epoch周期')
         for epoch in range(epochs):
             print('epoch: %d' % (epoch + 1))
             t = time()
@@ -335,7 +336,7 @@ class Model(object):
             samples = list(zip(*data_list))
 
             random.shuffle(samples)
-
+            # 这里的samples就是buckets
             for sample in samples:
                 c_len = len(sample[0][0])
                 idx = self.bucket_dit[c_len]
@@ -396,7 +397,7 @@ class Model(object):
                 print('Word segmentation:')
                 print('F score: %f' % scores[2])
             else:
-                print('F score: %f' % c_score)
+                print('F score: %f | P score: %f | R score: %f' % (c_score, scores[0], scores[1]))
             print('Time consumed: %d seconds' % int(time() - t))
         print('Training is finished!')
         if sent_seg:
