@@ -46,7 +46,7 @@ parser.add_argument('-dr', '--dropout_rate', default=0.5, type=float, help='Drop
 
 parser.add_argument('-iter', '--epochs', default=30, type=int, help='Numbers of epochs')
 
-parser.add_argument('-op', '--optimizer', default='adagrad', help='Optimizer')
+parser.add_argument('-op', '--optimizer', default='adagrad', help='Optimizer。选项：sgd, adagrad, adam, adadelta。')
 parser.add_argument('-lr', '--learning_rate', default=0.2, type=float, help='Initial learning rate')
 parser.add_argument('-ld', '--decay_rate', default=0.05, type=float, help='Learning rate decay')
 parser.add_argument('-mt', '--momentum', default=None, type=float, help='Momentum')

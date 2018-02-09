@@ -176,6 +176,8 @@ class Model(object):
             optimizer = tf.train.AdagradOptimizer(learning_rate=l_rate)
         elif optimizer == 'adam':
             optimizer = tf.train.AdamOptimizer()
+        elif optimizer == 'adadelta':
+            optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0)  # 根据文档，试试设置固定的初始lr
         else:
             raise Exception('optimiser error')
 
