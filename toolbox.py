@@ -138,7 +138,7 @@ def get_dicts(path, tag_scheme='BIES', crf=1, unk_rule=2):
         <UNK>：生僻字，或者字典里没有的字
         <#>：句子被截断时，后半句的开始
     '''
-    unk_chars = []
+    unk_chars = set()
     idx = 3
     for line in codecs.open(path + '/chars.txt', 'r', encoding='utf-8'):
         segs = line.split('\t')
@@ -149,7 +149,7 @@ def get_dicts(path, tag_scheme='BIES', crf=1, unk_rule=2):
         else:
             char2idx[segs[0]] = idx
             if int(segs[1]) < unk_rule:
-                unk_chars.append(idx)
+                unk_chars.add(idx)
             idx += 1
     idx2char = {k: v for v, k in list(char2idx.items())}
     if tag_scheme == 'BI':
@@ -887,7 +887,7 @@ def update_char_dict(char2idx, new_chars, unk_chars, valid_chars=None):
         if char not in char2idx and len(char.strip()) > 0:
             char2idx[char] = dim
             if valid_chars is None or char not in valid_chars:
-                unk_chars.append(dim)
+                unk_chars.add(dim)
             dim += 1
     idx2char = {k: v for v, k in list(char2idx.items())}
     return char2idx, idx2char, unk_chars

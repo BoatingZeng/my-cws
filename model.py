@@ -175,9 +175,9 @@ class Model(object):
             assert lr_v is not None
             optimizer = tf.train.AdagradOptimizer(learning_rate=l_rate)
         elif optimizer == 'adam':
-            optimizer = tf.train.AdamOptimizer()
+            optimizer = tf.train.AdamOptimizer(learning_rate=l_rate)  # 这个也改成用不固定的lr
         elif optimizer == 'adadelta':
-            optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0)  # 根据文档，试试设置固定的初始lr
+            optimizer = tf.train.AdadeltaOptimizer(learning_rate=l_rate)  # 用placeholder传lr
         else:
             raise Exception('optimiser error')
 
