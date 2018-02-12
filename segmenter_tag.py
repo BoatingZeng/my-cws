@@ -14,11 +14,16 @@ import pickle
 
 
 class Tagger(object):
-
-    def __init__(self, path, model='trained_model', sent_limit=300, gpu=0, tag_batch=500):
+    # 关于sent_limit的说明：
+    # 短于这个参数的句子会补空白，空白太多会拖慢速度
+    # 长于这个参数的句子，会被截断处理，不过输出结果还是合并的，正常的句子。截断对句子的标注有一定影响。
+    # 所以sent_limit这个参数，设置成句子平均长度多一点就好了，所以默认20。
+    # 由于toolbox里chop函数的截断策略，如果sen_limit小于等于10，会出错，所以干脆设置sent_limit最低值为20
+    def __init__(self, path, model='trained_model', sent_limit=20, gpu=0, tag_batch=500):
         assert path is not None
         assert model is not None
         assert os.path.isfile(path + '/chars.txt')
+        assert sent_limit >= 20
 
         if not os.path.isfile(path + '/' + model + '_model') or not os.path.isfile(
                 path + '/' + model + '_weights.index'):
@@ -156,9 +161,11 @@ def get_new_chars(lines, char2idx):
 
 if __name__ == '__main__':
     print('测试')
-    tagger = Tagger('./data/prechars_large')
-
-    # lines = codecs.open('./data/pku_raw.txt', 'rb', encoding='utf-8')
+    tagger = Tagger('./data/pku', sent_limit=20)
+    lines = ['魑魅魍魉这个句子非常长长度大于二十。再加一句，测试大于20时的情况。', '这是另外一个句子。']
+    results = tagger.tag(lines)
+    print(results)
+    # lines = codecs.open('./data/pku/raw_test.txt', 'rb', encoding='utf-8')
     # t = time()
     # tagger.tag(lines)
     # print(time()-t)
