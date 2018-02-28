@@ -11,6 +11,7 @@ import tensorflow as tf
 from time import time
 from model import Model
 import pickle
+import re
 
 
 class Tagger(object):
@@ -145,8 +146,23 @@ class Tagger(object):
         for k in range(len(raw_x)):
             raw_x[k] = toolbox.pad_zeros(raw_x[k], max_step)
 
-        prediction_out, multi_out = self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None, batch_size=self.tag_batch)
-        return prediction_out
+        prediction_out = self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None, batch_size=self.tag_batch)
+        # TODO 在这里对英文和数字做特殊处理
+        re_skip = re.compile('((?:[a-zA-Z0-9.%_\-/]+\s?)+)')
+        new_out = []
+        for seg, raw in zip(prediction_out, lines):
+            seg_sp = re_skip.split(seg)
+            raw_sp = re_skip.split(raw)
+            assert len(seg_sp) == len(raw_sp)
+            tmp = []
+            for s, r in zip(seg_sp, raw_sp):
+                if re_skip.match(s) is None:
+                    tmp.append(s.strip())
+                else:
+                    tmp.append(r.strip())
+            new_out.append(' '.join(tmp))
+
+        return new_out
 
 
 def get_new_chars(lines, char2idx):
@@ -162,10 +178,6 @@ def get_new_chars(lines, char2idx):
 if __name__ == '__main__':
     print('测试')
     tagger = Tagger('./data/pku', sent_limit=20)
-    lines = ['魑魅魍魉这个句子非常长长度大于二十。再加一句，测试大于20时的情况。', '这是另外一个句子。']
+    lines = codecs.open('./data/test_raw.txt', 'rb', encoding='utf-8')
     results = tagger.tag(lines)
     print(results)
-    # lines = codecs.open('./data/pku/raw_test.txt', 'rb', encoding='utf-8')
-    # t = time()
-    # tagger.tag(lines)
-    # print(time()-t)

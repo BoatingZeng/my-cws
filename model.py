@@ -514,7 +514,7 @@ class Model(object):
         if not seg_large and outpath is not None:
             toolbox.printer(r_x_raw, prediction_out, multi_out, outpath)
         else:
-            return prediction_out, multi_out
+            return prediction_out
 
     def predict(self, data, sess, model, index=None, argmax=True, batch_size=100, ensemble=None, verbose=False):
         if self.crf:
