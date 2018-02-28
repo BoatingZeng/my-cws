@@ -2,14 +2,11 @@
 tag 接口，专门做tag
 """
 
-import argparse
 import os
-import reader
-import toolbox
-import codecs
+from . import toolbox
 import tensorflow as tf
 from time import time
-from model import Model
+from .model import Model
 import pickle
 import re
 
@@ -189,12 +186,3 @@ def get_new_chars(lines, char2idx):
             if ch not in char2idx:
                 new_chars.add(ch)
     return new_chars
-
-
-if __name__ == '__main__':
-    print('测试')
-    tagger = Tagger('./data/pku', sent_limit=20)
-    lines = codecs.open('./data/test_raw.txt', 'rb', encoding='utf-8')
-    seg_out,  token_out = tagger.tag(lines, isTokenize=True)
-    print(seg_out)
-    print(token_out)

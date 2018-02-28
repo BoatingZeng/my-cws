@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
-from layers import EmbeddingLayer, BiLSTM, HiddenLayer, TimeDistributed, DropoutLayer, Convolution, Maxpooling, Forward
+from .layers import EmbeddingLayer, BiLSTM, HiddenLayer, TimeDistributed, DropoutLayer, Convolution, Maxpooling, Forward
 from time import time
-import losses
-import toolbox
-import batch as Batch
+from . import losses
+from . import toolbox
+from . import batch as Batch
 import random
 import pickle as pickle
 import codecs
-import evaluation
+from . import evaluation
 import os
 
 

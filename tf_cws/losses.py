@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
-from layers import Forward
+from .layers import Forward
 
 
 def softmax_cross_entropy(y, y_, nums_tags):

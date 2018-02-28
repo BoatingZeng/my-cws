@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
-import toolbox
+from . import toolbox
 import numpy as np
 from time import time
 

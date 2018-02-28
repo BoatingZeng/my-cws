@@ -5,13 +5,12 @@
 """
 import argparse
 import os
-import sys
-import reader
-import toolbox
+from . import reader
+from . import toolbox
 import codecs
 import tensorflow as tf
 from time import time
-from model import Model
+from .model import Model
 import pickle
 
 
