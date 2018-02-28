@@ -121,10 +121,11 @@ class Tagger(object):
         for s in self.sess:
             s.close()
 
-    def tag(self, lines):
+    def tag(self, lines, isTokenize=False):
         """
 
         :param lines: 字符串数组，相当于文件里的一行一行
+        :param isTokenize：是否要Tokenize，参考jieba。if True，会额外返回每个句子的tokenize列表。
         :return:
         """
         lines = [line.strip() for line in lines]
@@ -149,7 +150,8 @@ class Tagger(object):
         prediction_out = self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None, batch_size=self.tag_batch)
         # TODO 在这里对英文和数字做特殊处理
         re_skip = re.compile('((?:[a-zA-Z0-9.%_\-/]+\s?)+)')
-        new_out = []
+        seg_out = []
+        token_out = []
         for seg, raw in zip(prediction_out, lines):
             seg_sp = re_skip.split(seg)
             raw_sp = re_skip.split(raw)
@@ -160,9 +162,23 @@ class Tagger(object):
                     tmp.append(s.strip())
                 else:
                     tmp.append(r.strip())
-            new_out.append(' '.join(tmp))
+            seg_line = ' '.join(tmp)
+            seg_out.append(seg_line)
 
-        return new_out
+            if isTokenize:
+                tmp_list = seg_line.split()
+                token_line = []  # 元素：('这是', 0, 2)
+                total_len = 0
+                for e in tmp_list:
+                    next_len = total_len + len(e)
+                    token_line.append((e, total_len, next_len))
+                    total_len = next_len
+                token_out.append(token_line)
+
+        if isTokenize:
+            return seg_out, token_out
+        else:
+            return seg_out
 
 
 def get_new_chars(lines, char2idx):
@@ -179,5 +195,6 @@ if __name__ == '__main__':
     print('测试')
     tagger = Tagger('./data/pku', sent_limit=20)
     lines = codecs.open('./data/test_raw.txt', 'rb', encoding='utf-8')
-    results = tagger.tag(lines)
-    print(results)
+    seg_out,  token_out = tagger.tag(lines, isTokenize=True)
+    print(seg_out)
+    print(token_out)
