@@ -57,6 +57,7 @@ class Tagger(object):
         self.trans_dict = {}
 
         config = tf.ConfigProto(allow_soft_placement=True)
+        config.gpu_options.allow_growth = True
         self.gpu_config = "/gpu:" + str(gpu)
 
         t = time()

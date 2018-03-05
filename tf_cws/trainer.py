@@ -155,6 +155,7 @@ if args.action == 'train':
     nums_tag = len(tag2idx)
 
     config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
     gpu_config = "/gpu:" + str(args.gpu)
 
     initializer = tf.contrib.layers.xavier_initializer()
@@ -326,6 +327,7 @@ else:
 
 
     config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
     gpu_config = "/gpu:" + str(args.gpu)
 
     t = time()
