@@ -116,8 +116,9 @@ class Tagger(object):
     # 要释放一些资源
     def __del__(self):
         # 关闭session
-        for s in self.sess:
-            s.close()
+        if hasattr(self, 'sess'):
+            for s in self.sess:
+                s.close()
 
     def tag(self, lines, isTokenize=False):
         """
