@@ -162,17 +162,34 @@ class Tagger(object):
                 else:
                     tmp.append(r.strip())
             seg_line = ' '.join(tmp)
-            seg_out.append(seg_line)
+            seg_list = []
 
-            if isTokenize:
-                tmp_list = seg_line.split()
-                token_line = []  # 元素：('这是', 0, 2)
-                total_len = 0
-                for e in tmp_list:
-                    next_len = total_len + len(e)
-                    token_line.append((e, total_len, next_len))
-                    total_len = next_len
-                token_out.append(token_line)
+            tmp_list = seg_line.split()
+            token_line = []  # 元素：('这是', 0, 2)
+            total_len = 0
+            for e in tmp_list:
+                next_len = total_len + len(e)
+                raw_seg = raw[total_len: next_len]
+
+                miss_part = ''
+                while e != raw_seg:
+                    # 如果不对应，就一格一格移动到对应为止，并且把丢失的补回去
+                    miss_part += raw[total_len]
+                    total_len += 1
+                    next_len += 1
+                    raw_seg = raw[total_len: next_len]
+                len_miss_part = len(miss_part)
+                if len_miss_part != 0:
+                    token_line.append((miss_part, total_len - len_miss_part, total_len))
+                    seg_list.append(miss_part)
+
+                token_line.append((raw_seg, total_len, next_len))
+                seg_list.append(raw_seg)
+
+                total_len = next_len
+
+            token_out.append(token_line)
+            seg_out.append(seg_list)
 
         if isTokenize:
             return seg_out, token_out
