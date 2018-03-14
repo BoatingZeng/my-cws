@@ -148,7 +148,7 @@ class Tagger(object):
 
         prediction_out = self.model.tag(raw_x, lines, self.idx2tag, idx2char, unk_chars, self.trans_dict, self.sess, transducer=None, batch_size=self.tag_batch)
         # TODO 在这里对英文和数字做特殊处理
-        re_skip = re.compile('((?:[a-zA-Z0-9.%_\-/]+\s?)+)')
+        re_skip = re.compile('((?:[a-zA-Z0-9.%_\-/]+\s*)+)')
         seg_out = []
         token_out = []
         for seg, raw in zip(prediction_out, lines):
