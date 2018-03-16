@@ -12,6 +12,7 @@ import tensorflow as tf
 from time import time
 from .model import Model
 import json
+import pickle
 
 
 parser = argparse.ArgumentParser(description='A Universal Tokeniser. Written by Y. Shao, Uppsala University')
@@ -102,8 +103,7 @@ if args.action == 'train':
             "is_space": False,
             "sent_seg": False,
             "emb_path": None,
-            "tag_scheme": args.tags,
-            "unk_rule": args.unk_rule
+            "tag_scheme": args.tags
         }
 
     print('Reading data......')
@@ -136,7 +136,19 @@ if args.action == 'train':
     '''
         unk_chars储存生僻字，这里把只出现一次的字作为生僻字了
     '''
-    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, param_dic['tag_scheme'], param_dic['crf'], param_dic['unk_rule'])
+    if not os.path.isfile(os.path.join(path, 'maps.pkl')):
+        char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, param_dic['tag_scheme'], param_dic['crf'], args.unk_rule)
+        maps = {'char2idx': char2idx, 'idx2char': idx2char, 'unk_chars': unk_chars, 'tag2idx': tag2idx, 'idx2tag': idx2tag}
+        with open(os.path.join(path, 'maps.pkl'), 'wb') as fp:
+            pickle.dump(maps, fp)
+    else:
+        with open(os.path.join(path, 'maps.pkl'), 'rb') as fp:
+            maps = pickle.load(fp)
+        char2idx = maps['char2idx']
+        idx2char = maps['idx2char']
+        unk_chars = maps['unk_chars']
+        tag2idx = maps['tag2idx']
+        idx2tag = maps['idx2tag']
 
     #trans_dict没有用到，但是暂时不方便删除
     trans_dict = {}
@@ -188,17 +200,13 @@ if args.action == 'train':
 
                 model.main_graph(trained_model=path + '/' + model_file + '_model', scope=scope,
                                  emb_dim=emb_dim, gru=param_dic['gru'], rnn_dim=param_dic['rnn_dim'],
-                                 rnn_num=param_dic['rnn_num'], drop_out=param_dic['drop_out'], emb=emb, unk_rule=param_dic['unk_rule'])
+                                 rnn_num=param_dic['rnn_num'], drop_out=param_dic['drop_out'], emb=emb)
                 t = time()
 
             model.config(optimizer=args.optimizer, decay=args.decay_rate, lr_v=args.learning_rate,
                          momentum=args.momentum, clipping=args.clipping)
 
             init = tf.global_variables_initializer()
-
-            # 保存graph
-            # writer = tf.summary.FileWriter('./data/graphs/train/main_graph', main_graph)
-            # writer.close()
 
             print('Done. Time consumed: %d seconds' % int(time() - t))
 
@@ -264,14 +272,19 @@ else:
     sent_seg = param_dic['sent_seg']
     emb_path = param_dic['emb_path']
     tag_scheme = param_dic['tag_scheme']
-    unk_rule = param_dic['unk_rule']
 
     if args.embeddings is not None:
         emb_path = args.embeddings
 
     ngram = 1
 
-    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, tag_scheme, crf, unk_rule)
+    with open(os.path.join(path, 'maps.pkl'), 'rb') as fp:
+        maps = pickle.load(fp)
+    char2idx = maps['char2idx']
+    idx2char = maps['idx2char']
+    unk_chars = maps['unk_chars']
+    tag2idx = maps['tag2idx']
+    idx2tag = maps['idx2tag']
 
     # trans_dict没有用到，但是暂时不方便删除
     trans_dict = {}

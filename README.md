@@ -14,7 +14,9 @@
 
 ### 训练命令
 
+```
 python3 -m tf_cws.trainer train -p ./example_data/pku -t pku_train.segd -d pku_dev.segd -tb 128 -iter 60 -op adam -lr 0.001 -ld 0.05
+```
 
 #### 参数说明
 
@@ -31,19 +33,19 @@ python3 -m tf_cws.trainer train -p ./example_data/pku -t pku_train.segd -d pku_d
 
 文件会生成在指定的工作目录里，主要的文件是下面这些：
 
-1. char.txt：这个不是生成的，但是要跟随模型走
-2. tags.txt：记录所使用的tag模式
-3. trained_model_weights_score：记录分数，用pickle读取，下次再继续训练时，会读取这个作为模型初始分数
-4. trained_model_model：模型的一些基本信息，pickle读取
-5. checkpoint、trained_model_weights.data-00000-of-00001、trained_model_weights.index：这个几个是tensorflow保存的模型参数。
+* maps.pkl：从char.txt中生成的文件，包含char2idx、idx2char、tag2idx、idx2tag这四个映射，还有生僻字定义unk_chars
+* trained_model_weights_score.json：记录分数，下次再继续训练时，会读取这个作为模型初始分数
+* trained_model_model.json：模型的一些基本信息
+* checkpoint、trained_model_weights.data-00000-of-00001、trained_model_weights.index：这个几个是tensorflow保存的模型参数。
 
 如果训练时设置了--model参数（模型名字），那上面的部分文件会根据设置的名字改变，具体是：
-`<model>_weights_score`、`<model>_model`、`<model>_weights.data-00000-of-00001`、`<model>_weights.index`。因为默认的--model参数是trained_model，所以默认生成的文件名如上面列表所示。
+`<model>_weights_score.json`、`<model>_model.json`、`<model>_weights.data-00000-of-00001`、`<model>_weights.index`。因为默认的--model参数是trained_model，所以默认生成的文件名如上面列表所示。
 
 
 ### 测试命令
-
+```
 python3 -m tf_cws.trainer test -p ./example_data/pku -e pku_test.segd
+```
 
 ### 实际环境中使用
 

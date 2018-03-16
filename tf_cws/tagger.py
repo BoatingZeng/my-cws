@@ -9,6 +9,7 @@ from time import time
 from .model import Model
 import json
 import re
+import pickle
 
 
 class Tagger(object):
@@ -20,7 +21,7 @@ class Tagger(object):
     def __init__(self, path, model='trained_model', sent_limit=20, gpu=0, tag_batch=500):
         assert path is not None
         assert model is not None
-        assert os.path.isfile(path + '/chars.txt')
+        assert os.path.join(path, 'maps.pkl')
         assert sent_limit >= 20
 
         if not os.path.isfile(path + '/' + model + '_model.json') or not os.path.isfile(
@@ -50,9 +51,16 @@ class Tagger(object):
         self.sent_seg = param_dic['sent_seg']
         self.emb_path = param_dic['emb_path']
         self.tag_scheme = param_dic['tag_scheme']
-        self.unk_rule = param_dic['unk_rule']
 
-        self.char2idx, self.unk_chars, self.idx2char, self.tag2idx, self.idx2tag = toolbox.get_dicts(path, self.tag_scheme, self.crf, self.unk_rule)
+        with open(os.path.join(path, 'maps.pkl'), 'rb') as fp:
+            maps = pickle.load(fp)
+
+        self.char2idx = maps['char2idx']
+        self.idx2char = maps['idx2char']
+        self.unk_chars = maps['unk_chars']
+        self.tag2idx = maps['tag2idx']
+        self.idx2tag = maps['idx2tag']
+
         self.trans_dict = {}
 
         config = tf.ConfigProto(allow_soft_placement=True)
@@ -129,10 +137,7 @@ class Tagger(object):
         lines = [line.strip() for line in lines]
         # 这些是每次tag时的用的
         new_chars = get_new_chars(lines, self.char2idx)
-        if self.emb_path is not None:
-            valid_chars = toolbox.get_valid_chars(new_chars, self.emb_path)
-        else:
-            valid_chars = None
+        valid_chars = None
 
         char2idx, idx2char, unk_chars = toolbox.update_char_dict(self.char2idx, new_chars, self.unk_chars, valid_chars)
 

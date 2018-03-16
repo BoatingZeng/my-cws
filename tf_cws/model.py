@@ -56,7 +56,7 @@ class Model(object):
 
         self.real_batches = toolbox.get_real_batch(self.counts, self.batch_size)
 
-    def main_graph(self, trained_model, scope, emb_dim, gru, rnn_dim, rnn_num, drop_out=0.5, emb=None, unk_rule=2):
+    def main_graph(self, trained_model, scope, emb_dim, gru, rnn_dim, rnn_num, drop_out=0.5, emb=None):
         # define shared weights and variables
 
         dr = tf.placeholder(tf.float32, [], name='drop_out_holder')
