@@ -7,7 +7,7 @@ from . import toolbox
 import tensorflow as tf
 from time import time
 from .model import Model
-import pickle
+import json
 import re
 
 
@@ -23,18 +23,18 @@ class Tagger(object):
         assert os.path.isfile(path + '/chars.txt')
         assert sent_limit >= 20
 
-        if not os.path.isfile(path + '/' + model + '_model') or not os.path.isfile(
+        if not os.path.isfile(path + '/' + model + '_model.json') or not os.path.isfile(
                 path + '/' + model + '_weights.index'):
             raise Exception('No model file or weights file under the name of ' + model + '.')
 
-        fin = open(path + '/' + model + '_model', 'rb')
+        fin = open(path + '/' + model + '_model.json', 'r', encoding='utf-8')
 
         self.sent_limit = sent_limit
         self.gpu = gpu
         self.tag_batch = tag_batch
         weight_path = path + '/' + model
 
-        param_dic = pickle.load(fin)
+        param_dic = json.load(fin)
         fin.close()
 
         self.nums_chars = param_dic['nums_chars']
@@ -45,7 +45,6 @@ class Tagger(object):
         self.rnn_dim = param_dic['rnn_dim']
         self.rnn_num = param_dic['rnn_num']
         self.drop_out = param_dic['drop_out']
-        self.buckets_char = param_dic['buckets_char']
         self.nums_ngrams = param_dic['ngram']
         self.is_space = param_dic['is_space']
         self.sent_seg = param_dic['sent_seg']

@@ -1,0 +1,16 @@
+{
+    "nums_chars": 6867,
+    "nums_tags": 5,
+    "crf": 1,
+    "emb_dim": 50,
+    "gru": false,
+    "rnn_dim": 200,
+    "rnn_num": 1,
+    "drop_out": 0.5,
+    "ngram": null,
+    "is_space": false,
+    "sent_seg": false,
+    "emb_path": null,
+    "tag_scheme": "BIES",
+    "unk_rule": 2
+}

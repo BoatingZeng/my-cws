@@ -11,7 +11,7 @@ import codecs
 import tensorflow as tf
 from time import time
 from .model import Model
-import pickle
+import json
 
 
 parser = argparse.ArgumentParser(description='A Universal Tokeniser. Written by Y. Shao, Uppsala University')
@@ -83,6 +83,29 @@ if args.action == 'train':
     train_file = args.train
     dev_file = args.dev
     model_file = args.model
+
+    if os.path.isfile(path + '/' + model_file + '_model.json'):
+        fin = open(path + '/' + model_file + '_model.json', 'r', encoding='utf-8')
+        param_dic = json.load(fin)
+        fin.close()
+    else:
+        param_dic = {
+            "nums_chars": 0,
+            "nums_tags": 0,
+            "crf": args.crf,
+            "emb_dim": args.embeddings_dimension,
+            "gru": args.gru,
+            "rnn_dim": args.rnn_cell_dimension,
+            "rnn_num": args.rnn_layer_number,
+            "drop_out": args.dropout_rate,
+            "ngram": None,
+            "is_space": False,
+            "sent_seg": False,
+            "emb_path": None,
+            "tag_scheme": args.tags,
+            "unk_rule": args.unk_rule
+        }
+
     print('Reading data......')
     if args.reset or not os.path.isfile(path + '/raw_train.txt') or not os.path.isfile(path + '/raw_dev.txt'):
         # 用分好词的train和dev文件生成没有分词的raw文件
@@ -106,32 +129,20 @@ if args.action == 'train':
             raws_dev = reader.raw(path + '/raw_dev.txt')
             sents_dev = reader.gold(path + '/' + dev_file)
 
-        toolbox.raw2tags(raws_train, sents_train, path, 'tag_train.txt', reset=args.reset, tag_scheme=args.tags)
-        toolbox.raw2tags(raws_dev, sents_dev, path, 'tag_dev.txt', gold_path='tag_dev_gold.txt', tag_scheme=args.tags)
+        toolbox.raw2tags(raws_train, sents_train, path, 'tag_train.txt', reset=args.reset, tag_scheme=param_dic['tag_scheme'])
+        toolbox.raw2tags(raws_dev, sents_dev, path, 'tag_dev.txt', gold_path='tag_dev_gold.txt', tag_scheme=param_dic['tag_scheme'])
 
-    # if args.reset or not os.path.isfile(path + '/chars.txt'):
-    #     toolbox.get_chars(path, ['raw_train.txt', 'raw_dev.txt'])
 
     '''
         unk_chars储存生僻字，这里把只出现一次的字作为生僻字了
     '''
-    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, args.tags, args.crf, args.unk_rule)
+    char2idx, unk_chars, idx2char, tag2idx, idx2tag = toolbox.get_dicts(path, param_dic['tag_scheme'], param_dic['crf'], param_dic['unk_rule'])
 
     #trans_dict没有用到，但是暂时不方便删除
     trans_dict = {}
 
-    if args.embeddings is not None:
-        print('Reading embeddings...')
-        short_emb = args.embeddings[args.embeddings.index('/') + 1: args.embeddings.index('.')]
-        if args.reset or not os.path.isfile(path + '/' + short_emb + '_sub.txt'):
-            toolbox.get_sample_embedding(path, args.embeddings, char2idx)
-        emb_dim, emb, valid_chars = toolbox.read_sample_embedding(path, short_emb, char2idx)
-        for vch in valid_chars:
-            if vch in unk_chars:
-                unk_chars.remove(vch)
-    else:
-        emb_dim = args.embeddings_dimension
-        emb = None
+    emb_dim = param_dic['emb_dim']
+    emb = None
 
     # 如果语料里出现不在字典里的字，就把它指向<UNK>
     train_x, train_y, max_len_train = toolbox.get_input_vec(path, 'tag_train.txt', char2idx, tag2idx,
@@ -152,7 +163,13 @@ if args.action == 'train':
 
     b_dev_y_gold = [line.strip() for line in codecs.open(path + '/tag_dev_gold.txt', 'r', encoding='utf-8')]
 
-    nums_tag = len(tag2idx)
+    param_dic['nums_chars'] = len(char2idx) + 2
+    param_dic['nums_tags'] = len(tag2idx)
+    # param_dic完整了，可以保存
+    if not os.path.isfile(path + '/' + model_file + '_model.json'):
+        f_model = open(path + '/' + model_file + '_model.json', "w", encoding="utf-8")
+        json.dump(param_dic, f_model, ensure_ascii=False, indent=4)
+        f_model.close()
 
     config = tf.ConfigProto(allow_soft_placement=True)
     config.gpu_options.allow_growth = True
@@ -165,13 +182,13 @@ if args.action == 'train':
     with main_graph.as_default():
         with tf.device(gpu_config):
             with tf.variable_scope("tagger") as scope:
-                model = Model(nums_chars=len(char2idx) + 2, nums_tags=nums_tag, buckets_char=b_lens, counts=b_count,
-                              crf=args.crf, ngram=nums_grams, batch_size=args.train_batch,
-                              emb_path=args.embeddings, tag_scheme=args.tags)
+                model = Model(nums_chars=param_dic['nums_chars'], nums_tags=param_dic['nums_tags'], buckets_char=b_lens, counts=b_count,
+                              crf=param_dic['crf'], ngram=nums_grams, batch_size=args.train_batch,
+                              emb_path=args.embeddings, tag_scheme=param_dic['tag_scheme'])
 
                 model.main_graph(trained_model=path + '/' + model_file + '_model', scope=scope,
-                                 emb_dim=emb_dim, gru=args.gru, rnn_dim=args.rnn_cell_dimension,
-                                 rnn_num=args.rnn_layer_number, drop_out=args.dropout_rate, emb=emb, unk_rule=args.unk_rule)
+                                 emb_dim=emb_dim, gru=param_dic['gru'], rnn_dim=param_dic['rnn_dim'],
+                                 rnn_num=param_dic['rnn_num'], drop_out=param_dic['drop_out'], emb=emb, unk_rule=param_dic['unk_rule'])
                 t = time()
 
             model.config(optimizer=args.optimizer, decay=args.decay_rate, lr_v=args.learning_rate,
@@ -188,7 +205,7 @@ if args.action == 'train':
     main_graph.finalize()
     main_sess = tf.Session(config=config, graph=main_graph)
 
-    if args.crf > 0:
+    if param_dic['crf'] > 0:
         decode_graph = tf.Graph()
         with decode_graph.as_default():
             with tf.device(gpu_config):
@@ -196,12 +213,6 @@ if args.action == 'train':
         decode_graph.finalize()
 
         decode_sess = tf.Session(config=config, graph=decode_graph)
-
-        # 保存graph
-        # writer = tf.summary.FileWriter('./data/graphs/train/decode_graph', decode_graph)
-        # writer.close()
-        # print('保存之后退出，不继续')
-        # sys.exit()
 
         sess = [main_sess, decode_sess]
 
@@ -229,15 +240,15 @@ else:
 
     model_file = args.model
 
-    if not os.path.isfile(path + '/' + model_file + '_model') or not os.path.isfile(
+    if not os.path.isfile(path + '/' + model_file + '_model.json') or not os.path.isfile(
             path + '/' + model_file + '_weights.index'):
         raise Exception('No model file or weights file under the name of ' + model_file + '.')
 
-    fin = open(path + '/' + model_file + '_model', 'rb')
+    fin = open(path + '/' + model_file + '_model.json', 'r', encoding='utf-8')
 
     weight_path = path + '/' + model_file
 
-    param_dic = pickle.load(fin)
+    param_dic = json.load(fin)
     fin.close()
 
     nums_chars = param_dic['nums_chars']
@@ -248,7 +259,6 @@ else:
     rnn_dim = param_dic['rnn_dim']
     rnn_num = param_dic['rnn_num']
     drop_out = param_dic['drop_out']
-    buckets_char = param_dic['buckets_char']
     nums_ngrams = param_dic['ngram']
     is_space = param_dic['is_space']
     sent_seg = param_dic['sent_seg']

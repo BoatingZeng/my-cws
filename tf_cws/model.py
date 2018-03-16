@@ -6,10 +6,10 @@ from . import losses
 from . import toolbox
 from . import batch as Batch
 import random
-import pickle as pickle
 import codecs
 from . import evaluation
 import os
+import json
 
 
 class Model(object):
@@ -57,18 +57,6 @@ class Model(object):
         self.real_batches = toolbox.get_real_batch(self.counts, self.batch_size)
 
     def main_graph(self, trained_model, scope, emb_dim, gru, rnn_dim, rnn_num, drop_out=0.5, emb=None, unk_rule=2):
-        if trained_model is not None:
-            param_dic = {'nums_chars': self.nums_chars, 'nums_tags': self.nums_tags, 'crf': self.crf, 'emb_dim': emb_dim,
-                         'gru': gru, 'rnn_dim': rnn_dim, 'rnn_num': rnn_num, 'drop_out': drop_out, 'buckets_char': self.buckets_char,
-                         'ngram': self.ngram, 'is_space': self.is_space, 'sent_seg': self.sent_seg, 'emb_path': self.emb_path,
-                         'tag_scheme': self.tag_scheme, 'unk_rule': unk_rule}
-            #print param_dic
-            # 如果已经有model的基本信息，就不要再导出了
-            if not os.path.isfile(trained_model):
-                f_model = open(trained_model, 'wb')
-                pickle.dump(param_dic, f_model)
-                f_model.close()
-
         # define shared weights and variables
 
         dr = tf.placeholder(tf.float32, [], name='drop_out_holder')
@@ -77,13 +65,7 @@ class Model(object):
 
         self.emb_layer = EmbeddingLayer(self.nums_chars + 20, emb_dim, weights=emb, name='emb_layer')
 
-        if self.ngram is not None:
-            ng_embs = [None for _ in range(len(self.ngram))]
-            for i, n_gram in enumerate(self.ngram):
-                self.gram_layers.append(EmbeddingLayer(n_gram + 5000 * (i + 2), emb_dim, weights=ng_embs[i], name= str(i + 2) + 'gram_layer'))
-
         with tf.variable_scope('BiRNN'):
-
             if gru:
                 fw_rnn_cell = tf.nn.rnn_cell.GRUCell(rnn_dim)
                 bw_rnn_cell = tf.nn.rnn_cell.GRUCell(rnn_dim)
@@ -288,13 +270,13 @@ class Model(object):
             self.saver.restore(sess[0], ckpt.model_checkpoint_path)
 
         # 读取前一次保存的分数
-        if os.path.isfile(trained_model + '_score'):
+        if os.path.isfile(trained_model + '_score.json'):
             print('读取前一次保存的分数')
-            score_file = open(trained_model + '_score', 'rb')
-            best_score = pickle.load(score_file)
+            score_file = open(trained_model + '_score.json', 'r', encoding="utf-8")
+            best_score = json.load(score_file)
             score_file.close()
         else:
-            best_score = [0] * 6
+            best_score = {'p': 0.0, 'r': 0.0, 'f': 0.0}
         t_pre = time()
         lr_r = lr
 
@@ -364,26 +346,20 @@ class Model(object):
             else:
                 prediction_out, raw_out = toolbox.generate_output(chars, predictions, trans_dict, transducer_dict)
 
-            if sent_seg:
-                scores = evaluation.evaluator(prediction_out, v_y_gold, raw_out, v_y_raw)
-            else:
-                scores = evaluation.evaluator(prediction_out, v_y_gold)
-            if sent_seg:
-                c_score = scores[2] * scores[5]
-                c_best_score = best_score[2] * best_score[5]
-            else:
-                c_score = scores[2]
-                c_best_score = best_score[2]
+            scores = evaluation.evaluator(prediction_out, v_y_gold)
+
+            c_score = scores[2]
+            c_best_score = best_score['f']
 
             if c_score > c_best_score:
                 best_epoch = epoch + 1
-                best_score = scores
+                best_score = {'p': scores[0], 'r': scores[1], 'f': scores[2]}
                 self.saver.save(sess[0], trained_model, write_meta_graph=False)
 
                 #  保存最好分数，方便下次重启时比较
                 print('保存最好分数')
-                score_file = open(trained_model + '_score', 'wb')
-                pickle.dump(best_score, score_file)
+                score_file = open(trained_model + '_score.json', 'w', encoding="utf-8")
+                json.dump(best_score, score_file, ensure_ascii=False, indent=4)
                 score_file.close()
 
                 if outpath is not None:
@@ -392,29 +368,13 @@ class Model(object):
                         wt.write(pre + '\n')
                     wt.close()
 
-
-            if sent_seg:
-                print('Sentence segmentation:')
-                print('F score: %f\n' % scores[5])
-                print('Word segmentation:')
-                print('F score: %f' % scores[2])
-            else:
-                print('F score: %f | P score: %f | R score: %f' % (c_score, scores[0], scores[1]))
+            print('F score: %f | P score: %f | R score: %f' % (c_score, scores[0], scores[1]))
             print('Time consumed: %d seconds' % int(time() - t))
+
         print('Training is finished!')
-        if sent_seg:
-            print('Sentence segmentation:')
-            print('Best F score: %f' % best_score[5])
-            print('Best Precision: %f' % best_score[3])
-            print('Best Recall: %f\n' % best_score[4])
-            print('Word segmentation:')
-            print('Best F score: %f' % best_score[2])
-            print('Best Precision: %f' % best_score[0])
-            print('Best Recall: %f\n' % best_score[1])
-        else:
-            print('Best F score: %f' % best_score[2])
-            print('Best Precision: %f' % best_score[0])
-            print('Best Recall: %f\n' % best_score[1])
+        print('Best F score: %f' % best_score['f'])
+        print('Best Precision: %f' % best_score['p'])
+        print('Best Recall: %f\n' % best_score['r'])
         print('Best epoch: %d' % best_epoch)
 
     def test(self, t_x, t_y_raw, t_y_gold, idx2tag, idx2char, unk_chars, trans_dict, sess, transducer, ensemble=None,
